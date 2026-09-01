@@ -1,0 +1,82 @@
+drop table if exists cart;
+
+create table cart(
+  cart_id int primary key not null generated always as identity (start with 1 increment by 1) unique,
+  customer_id int,
+  product_id int,
+  quantity int,
+  constraint fk_customer
+  foreign key (customer_id)
+  references customers(customer_id),
+  constraint fk_product
+  foreign key (product_id)
+  references products(product_id)
+);
+
+alter table cart enable row level security;
+
+ALTER TABLE cart
+ADD CONSTRAINT unique_customer_product
+UNIQUE (customer_id, product_id);
+
+CREATE POLICY "Users can view their own cart"
+ON public.cart
+FOR SELECT
+TO authenticated
+USING (customer_id IN (
+      SELECT customer_id
+      FROM public.customers
+      WHERE auth_customer_id = auth.uid()
+    )
+);
+
+CREATE POLICY "Users can add to their own cart"
+ON public.cart
+FOR INSERT
+TO authenticated
+WITH CHECK (customer_id IN (
+      SELECT customer_id
+      FROM public.customers
+      WHERE auth_customer_id = auth.uid()
+    )
+);
+
+CREATE POLICY "Users can update their own cart"
+ON public.cart
+FOR UPDATE
+TO authenticated
+USING (customer_id IN (
+      SELECT customer_id
+      FROM public.customers
+      WHERE auth_customer_id = auth.uid()
+    )
+)
+WITH CHECK (customer_id IN (
+      SELECT customer_id
+      FROM public.customers
+      WHERE auth_customer_id = auth.uid()
+    )
+);
+
+create policy "Users can delete their own cart"
+on public.cart
+for delete
+to authenticated
+USING (
+    customer_id IN (
+        SELECT customer_id
+        FROM public.customers
+        WHERE auth_customer_id = auth.uid()
+    )
+);
+
+CREATE POLICY "Customers can update their own customer record"
+ON public.customers
+FOR UPDATE
+TO authenticated
+USING (
+    auth_customer_id = auth.uid()
+)
+WITH CHECK (
+    auth_customer_id = auth.uid()
+);
