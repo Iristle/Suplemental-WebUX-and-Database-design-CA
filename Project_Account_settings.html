@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang = en>
+    <head>
+        <link  rel="stylesheet"  href="ProjectStyle.css">
+        <title>Account</title>
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    </head>
+
+    <body>
+        <ul class="header">
+            <li><a href="Project_Index.html" style="padding-bottom: 14px;  padding-top: 14px;"><img src="Projectlogo.png" alt="Make Up Logo"></a></li>
+            <li><a href="Project_Account_settings.html">Account</a></li>
+            <li><a href="Project_Store.html">Store</a></li>
+            <li style="float: right;"><a href="Project_CheckOut.html" style="padding-bottom: 14px;  padding-top: 14px;"><img src="Basket.png" alt="Shopping cart" style="height: 54px; width:54px;"></a></li>
+        </ul>
+
+        <div class="container">
+            <h1 style="margin-bottom: 10px; padding: 10px;">Account settings</h1>
+            <button class="menu" id="LogOut" style="margin-bottom: 10px;">Log Out</button>
+            <label for="pass"><b>New Password:</b></label>
+            <input type="password" placeholder="Enter New Password" id="pass" name="pass" required>
+            <button class="menu" id="passChng">Change Password</button>
+            <button class="menuevil" id="Delete">Delete Account</button>
+
+        </div>
+        
+
+        <div class="footer" style="margin-top: 100px;">
+            <ul>
+                <li>Contact us:</li>
+                <li>Email: MadeUpMakeUp@hotmail.com</li>
+                <li>Phone: +353 82 132 4657</li>
+            </ul>
+            <ul>
+                <li class="tooltip"><img src="instagram-white-icon.png" style="padding-left: 0px;"><span class="tooltiptext">No instagram yet : (</span></li>
+                <li class="tooltip"><img src="fbicon.png"><span class="tooltiptext">No facebook yet : (</span></li>
+                <li class="tooltip"><img src="twitter.png"><span class="tooltiptext">No twitter yet : (</span></li>
+            </ul>
+            </div>
+        </div>
+
+
+
+        <script>
+            const Supabase_URL = "https://yabijlzbcwklpwprubrt.supabase.co";
+            const Supabase_Anon_Key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhYmlqbHpiY3drbHB3cHJ1YnJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgxNDc4MzksImV4cCI6MjEwMzcyMzgzOX0.FVi-qVZknv2iKHcyz8QZ-m1hMMxTqGB4zNd8pzesZfk";
+            const supabaseClient = window.supabase.createClient(Supabase_URL, Supabase_Anon_Key);
+                
+            async function checkLogin() {
+                const { data, error } = await supabaseClient.auth.getUser();
+
+                if (error) {
+                    if (error.name === "AuthSessionMissingError") {
+                        window.location.replace("Project_Account.html");
+                        return;
+                    }
+                };
+
+                if (data.user) {
+                    console.log("User is logged in!");
+                };
+            };
+            
+            const Loggout = document.getElementById("LogOut")
+
+            async function LogOut() {
+                const { error } = await supabaseClient.auth.signOut();
+                if (error) {
+                    console.error("Logout error:", error);
+                return;
+                };
+                checkLogin();
+            };
+
+            const NewPassword = document.getElementById("pass");
+            const ChangePass = document.getElementById("passChng");
+
+            async function ChangePassword() {
+                const newPassword = NewPassword.value;
+                
+
+                const { error } = await supabaseClient.auth.updateUser({password: newPassword});
+
+                if (error) {
+                    console.error("Password change error:", error);
+                    return;
+                };
+            
+                NewPassword.value = "";
+            }
+
+            const DeleteButton = document.getElementById("Delete");
+
+            DeleteButton.addEventListener("click", async () => {
+                const confirmed = confirm(
+                    "Are you sure you want to permanently delete your account?"
+                );
+
+                if (!confirmed) {
+                    return;
+                }
+
+                const { error } = await supabaseClient.functions.invoke("delete-account");
+
+                if (error) {
+                    console.error("Delete account error:", error);
+                    alert("There was a problem deleting your account.");
+                    return;
+                }
+                alert("Your account has been deleted.");
+                await supabaseClient.auth.signOut();
+                window.location.replace("Project_Account.html");
+            });
+
+            checkLogin();
+            
+            Loggout.addEventListener("click", LogOut);
+
+            ChangePass.addEventListener("click", ChangePassword);
+
+        </script>
+
+
+
+    </body>

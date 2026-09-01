@@ -1,18 +1,222 @@
 html lang = en>
     <head>
-
-
         <link  rel="stylesheet"  href="ProjectStyle.css">
+        <title>Awesome Make Up</title>
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     </head>
 
     <body>
         <ul class="header">
-            <li><a href="Project_Index.html" style="padding-bottom: 14px;  padding-top: 14px;"><img src="Project logo.png" alt="Make Up Logo"></a></li>
-            <li><a href="Project_Account.html">Account</a></li>
+            <li><a href="Project_Index.html" style="padding-bottom: 14px;  padding-top: 14px;"><img src="Projectlogo.png" alt="Make Up Logo"></a></li>
+            <li><a href="Project_Account_settings.html">Account</a></li>
             <li><a href="Project_Store.html">Store</a></li>
-            <li><a href="Project_CheckOut.html">Check Out</a></li>
+            <li style="float: right;"><a href="Project_CheckOut.html" style="padding-bottom: 14px;  padding-top: 14px;"><img src="Basket.png" alt="Shopping cart" style="height: 54px; width:54px;"></a></li>
         </ul>
 
+        
+
+
+        <h1>Our products</h1>
+
+        <div class="product">
+            <img id='lipstick' src="red-lipstick.png">
+            <ul>
+                <li><span onclick="redlip()" style="background-color: rgb(211, 50, 50); margin-left: 0px;"></span></li>
+                <li><span onclick="blacklip()" style="background-color: black;"></span></li>
+            </ul>
+            
+            <h2>€4.99</h2>
+            
+            <p id='lipstick-p' onclick="addLipstickToCart()">Crimson red water proof lipstick</p>
+
+        </div>
+
+        <div class="product">
+            <img id='pallete' src="pallete.png">
+            <h2>10.99€</h2>
+            <p id='pallete-p' onclick="addToCart(3)">Eyeshadow colour pallete with mirror</p>
+        </div>
+
+        <div class="product">
+            <img id='brushes' src="brush.png">
+            <h2>€7.50</h2>
+            <p id='pallete-p' onclick="addToCart(4)">Set of make up brushes</p>
+        </div>
+
+        <div class="product">
+            <img id='Eyeliner' src="Eyeliner.png">
+            <h2>€15.99</h2>
+            <p id='Eyeliner-p' onclick="addToCart(5)">Long lasting water proof eyelliner</p>
+        </div>
+
+        <div class="product">
+            <img id='Sponge' src="Sponge.png">
+            <h2>€3.00</h2>
+            <p id='Sponge-p' onclick="addToCart(6)">Sponge perfect for applying creams</p>
+        </div>
+
+        <div class="product">
+            <img id='blush' src="blush.png">
+            <h2>€6.99</h2>
+            <p id='blush-p' onclick="addToCart(7)">Blush idk</p>
+        </div>
+
+        <div class="product">
+            <img id='foundation' src="foundation.png">
+            <h2>€8.99</h2>
+            <p id='foundation-p' onclick="addToCart(8)">Helpes me</p>
+        </div>
+
+        <div class="product">
+            <img id='Concealer' src="Concealer.png">
+            <h2>€7.99</h2>
+            <p id='Concealer-p' onclick="addToCart(9)">Poogie help</p>
+        </div>
+        
+        <script>
+            const Supabase_URL = "https://yabijlzbcwklpwprubrt.supabase.co";
+            const Supabase_Anon_Key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhYmlqbHpiY3drbHB3cHJ1YnJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgxNDc4MzksImV4cCI6MjEwMzcyMzgzOX0.FVi-qVZknv2iKHcyz8QZ-m1hMMxTqGB4zNd8pzesZfk";
+            const supabaseClient = window.supabase.createClient(Supabase_URL, Supabase_Anon_Key);
+            
+            let selectedLipstick = 1;
+            const lipstickpic = document.getElementById('lipstick')
+            const lipstickpar = document.getElementById('lipstick-p')
+            function redlip() {
+                lipstickpic.src = "red-lipstick.png";
+                lipstickpar.innerHTML = "Crimson red water proof lipstick";
+                selectedLipstick = 1;
+            }
+
+            function blacklip() {
+                lipstickpic.src = "black-lipstick.png";
+                lipstickpar.innerHTML = "Gothic black water proof lipstick";
+                selectedLipstick = 2;
+            }
+
+
+
+            async function loadProducts() {
+                const { data: products, error } = await supabaseClient
+                        .from("products")
+                        .select("*");
+
+                if (error) {
+                    console.error("Product error:", error);
+                    return;
+                }
+
+                console.log("PRODUCTS:", products);
+            }
+
+            loadProducts();
+
+            async function addToCart(productId) {
+                productId = Number(productId);
+
+                const { data: authData, error: authError } =
+                    await supabaseClient.auth.getUser();
+
+                if (authError && authError.name !== "AuthSessionMissingError") 
+                {console.error("Auth error:", authError);
+                return;}
+
+                if (authData.user) {
+                    await addToDatabaseCart(productId);
+                } else {
+                    addToGuestCart(productId);
+                };
+            }
+            
+            function addToGuestCart(product_id) {
+                const productId = Number(product_id);
+                let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+                const existingItem = cart.find(
+                    item => item.product_id === productId
+                );
+                if (existingItem) {
+                    existingItem.quantity += 1;
+                } else {
+                    cart.push({
+                        product_id: productId,
+                        quantity: 1
+                    });
+                }
+                localStorage.setItem("cart", JSON.stringify(cart)
+                );
+
+                console.log("Cart:", cart);
+            }
+
+            function addLipstickToCart() {
+                addToCart(selectedLipstick);
+            }
+
+
+            async function addToDatabaseCart(productId) {
+                const { data: authData, error: authError } = await supabaseClient.auth.getUser();
+
+                if (authError) {
+                    console.error("Auth error:", authError);
+                    return;
+                }
+                const { data: customer, error: customerError } = await supabaseClient
+                    .from("customers")
+                    .select("customer_id")
+                    .eq("auth_customer_id", authData.user.id)
+                    .single();
+
+                if (customerError) {
+                    console.error("Customer error:", customerError);
+                    return;
+                }
+                const customerId = customer.customer_id;
+                const { data: existingItem, error: cartError } =
+                    await supabaseClient
+                        .from("cart")
+                        .select("*")
+                        .eq("customer_id", customerId)
+                        .eq("product_id", productId)
+                        .maybeSingle();
+                if (cartError) {
+                    console.error("Cart lookup error:", cartError);
+                    return;
+                }
+                if (existingItem) {
+                    const { error } = await supabaseClient
+                        .from("cart")
+                        .update({
+                            quantity: existingItem.quantity + 1
+                        })
+                        .eq("cart_id", existingItem.cart_id);
+
+                    if (error) {
+                        console.error("Cart update error:", error);
+                        return;
+                    }
+
+                    console.log("Added another to cart!");
+
+                } else {
+                    const { error } = await supabaseClient
+                        .from("cart")
+                        .insert({
+                            customer_id: customerId,
+                            product_id: productId,
+                            quantity: 1
+                        });
+
+                    if (error) {
+                        console.error("Cart insert error:", error);
+                        return;
+                    }
+                    
+                console.log("Added new item to cart!");
+                };
+            }
+
+
+        </script>
 
 
 
@@ -24,7 +228,7 @@ html lang = en>
             </ul>
             <ul>
                 <li class="tooltip"><img src="instagram-white-icon.png" style="padding-left: 0px;"><span class="tooltiptext">No instagram yet : (</span></li>
-                <li class="tooltip"><img src="fb icon.png"><span class="tooltiptext">No facebook yet : (</span></li>
+                <li class="tooltip"><img src="fbicon.png"><span class="tooltiptext">No facebook yet : (</span></li>
                 <li class="tooltip"><img src="twitter.png"><span class="tooltiptext">No twitter yet : (</span></li>
             </ul>
             </div>

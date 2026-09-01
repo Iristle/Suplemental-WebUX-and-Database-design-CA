@@ -1,32 +1,34 @@
 <!DOCTYPE html>
 <html lang = en>
     <head>
-
-
         <link  rel="stylesheet"  href="ProjectStyle.css">
+        <title>Account</title>
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+        
     </head>
 
     <body>
         <ul class="header">
-            <li><a href="Project_Index.html" style="padding-bottom: 14px;  padding-top: 14px;"><img src="Project logo.png" alt="Make Up Logo"></a></li>
-            <li><a href="Project_Account.html">Account</a></li>
+            <li><a href="Project_Index.html" style="padding-bottom: 14px;  padding-top: 14px;"><img src="Projectlogo.png" alt="Make Up Logo"></a></li>
+            <li><a href="Project_Account_settings.html">Account</a></li>
             <li><a href="Project_Store.html">Store</a></li>
-            <li><a href="Project_CheckOut.html">Check Out</a></li>
+            <li style="float: right;"><a href="Project_CheckOut.html" style="padding-bottom: 14px;  padding-top: 14px;"><img src="Basket.png" alt="Shopping cart" style="height: 54px; width:54px;"></a></li>
         </ul>
 
         <div class="container">
             <h1 style="margin-bottom: 10px; padding: 10px;">Personal Account</h1>
-            <h2>Please fill in this form to login or register.</h2>
+            <h2 id="info">Please fill in this form to login or register.</h2>
             
-            <label for="mail"><b>Email</b></label>
-            <input type="text" placeholder="Enter Email" id="mail" name="mail" required>
+            <label for="user"><b>Username (Cannot be changed later)</b></label>
+            <input type="text" placeholder="Enter Username" id="user" name="user" required>
 
             <label for="pass"><b>Password</b></label>
             <input type="password" placeholder="Enter Password" id="pass" name="pass" required>
             
-            <button type="submit" class="registerbtn">Register</button>
-            <button type="submit" class="loginbtn">Log In</button>
-            
+            <button class = "smallbutton" type="submit" id="regibtn">Register</button>
+            <button class = "smallbutton" type="submit" id="logibtn" style="float: right;">Log In</button>
+             
 
         </div>
 
@@ -38,9 +40,130 @@
             </ul>
             <ul>
                 <li class="tooltip"><img src="instagram-white-icon.png" style="padding-left: 0px;"><span class="tooltiptext">No instagram yet : (</span></li>
-                <li class="tooltip"><img src="fb icon.png"><span class="tooltiptext">No facebook yet : (</span></li>
+                <li class="tooltip"><img src="fbicon.png"><span class="tooltiptext">No facebook yet : (</span></li>
                 <li class="tooltip"><img src="twitter.png"><span class="tooltiptext">No twitter yet : (</span></li>
             </ul>
-            </div>
+            
         </div>
+        <script>
+        const Supabase_URL = "https://yabijlzbcwklpwprubrt.supabase.co";
+        const Supabase_Anon_Key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhYmlqbHpiY3drbHB3cHJ1YnJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgxNDc4MzksImV4cCI6MjEwMzcyMzgzOX0.FVi-qVZknv2iKHcyz8QZ-m1hMMxTqGB4zNd8pzesZfk";
+        const supabaseClient = window.supabase.createClient(Supabase_URL, Supabase_Anon_Key);
+
+
+        const Username = document.getElementById("user");
+        const Password = document.getElementById("pass");
+        const information = document.getElementById("info");
+
+        const Register = document.getElementById("regibtn");
+        const LogIn = document.getElementById("logibtn");
+        
+        async function Registerfunc() {
+            const x = Username.value.trim();
+            const y = Password.value;
+            
+            if (x === ""||y === "")
+                {
+                    information.innerHTML = "Username and password must be filled out."
+                    return;
+                };
+            
+
+            const {data, error} = await supabaseClient
+            .from ("customers")
+            .select ('customer_username')
+            .eq ('customer_username',x)
+            
+            if (error){
+                console.error("Error in js:", error);
+                information.innerHTML = "Something went wrong, try again later.";
+                return;
+            };
+
+            const z = x.toLowerCase() + "@example.com";
+
+            const {data:authData, error:authError} = await supabaseClient.auth.signUp({
+                    email: z,
+                    password: y
+                });
+
+            if (authError) {
+                console.error("Auth error:", authError);
+                information.innerHTML = "Could not create account.";
+                return;
+            }
+
+            const { data: sessionData } = await supabaseClient.auth.getSession();
+            const { error: customerError } = await supabaseClient
+                .from("customers")
+                .insert({
+                    customer_username: x,
+                    auth_customer_id: authData.user.id
+                });
+
+            if (customerError) {
+                console.error("Customer error:", customerError);
+                information.innerHTML = "Account created, but customer information could not be saved.";
+                return;
+            };
+
+            information.innerHTML = "Account created successfully.";
+        };
+
+
+        async function Loginfunc() {
+            const x = Username.value.trim();
+            const y = Password.value;
+            
+            if (x === "" || y === "") {
+            information.innerHTML =
+            "Username and password must be filled out.";
+            return;
+            }
+
+            const internalEmail = x.toLowerCase() + "@example.com";
+
+            const { data: loginData, error: loginError } =
+            await supabaseClient.auth.signInWithPassword({
+            email: internalEmail,
+            password: y
+            });
+
+            if (loginError) {
+            console.error("Login error:", loginError);
+            information.innerHTML =
+            "Incorrect username or password.";
+            return;
+            };
+
+            checkLogin()
+
+        };
+
+        async function checkLogin() {
+            const { data, error } = await supabaseClient.auth.getUser();
+
+            if (error) {
+                if (error.name === "AuthSessionMissingError") {
+                console.log("User is not logged in.");
+                return;
+            };
+
+            console.error("Error checking login:", error);
+            return;
+            };
+
+            if (data.user) {
+                console.log("User is logged in!");
+                window.location.replace("Project_Account_settings.html");
+            };
+        };
+
+        
+            
+        Register.addEventListener("click", Registerfunc);
+        
+
+        LogIn.addEventListener("click", Loginfunc);
+        </script>
     </body>

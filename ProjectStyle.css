@@ -57,9 +57,10 @@ h1 {
     font-size: 70px;
     padding: 10px;
     color: #ff89ff;
-    padding-top: 90px;
+    padding-top: 80px;
     text-align: center;
     display: block;
+    margin: 0;
 }
 
 h2 {
@@ -153,7 +154,7 @@ p {
     margin-right: 35%;
 }
 
-input[type=text], input[type=password] {
+.container input[type=text], .container input[type=password] {
     width: 96%;
     padding: 10px;
     margin: 4px 0 30px 0;
@@ -163,12 +164,12 @@ input[type=text], input[type=password] {
 }
 
 
-input[type=text]:focus, input[type=password]:focus {
+.container input[type=text]:focus,.container input[type=password]:focus {
     background: #e4e4e4;
     outline: none;
 }
 
-.registerbtn {
+.container .smallbutton {
     background-color: #fddaff;
     padding: 10px 14px;
     margin: 8px 0;
@@ -177,21 +178,184 @@ input[type=text]:focus, input[type=password]:focus {
     width: 45%;
 }
 
-.registerbtn:hover {
+.container .smallbutton:hover {
     background-color: #fcc7ff;
 }
 
 
-.loginbtn {
-    background-color: #fddaff;
-    padding: 10px 14px;
-    margin: 8px 0;
-    border: none;
+.product {
+    width: 30%;
+    margin: 0.5%;
+    padding: 0.6%;
+    border-radius: 20px;
+    outline: 2px solid #3f49ff ;
+    display: inline-block;
+    height: 620px;
+    overflow: hidden;
+}
+
+.product:hover{
+    background: #999eff;
+}
+
+.product img{
+    width: 100%;
+    border-radius: 20px;
+}
+
+.product p{
+    font-size: 25px;
+    color: rgb(83, 64, 255);
+    text-decoration: underline;
     cursor: pointer;
-    width: 45%;
+    margin: 0px;
+    padding: 10px;
+    width: 100%;
+    text-align: left;
+}
+
+.product ul{
+    width: 100%;
+    list-style-type: none;
+}
+
+.product ul li{
+    display: block;
+    width: 10%;
+    float: left;
+}
+
+
+.product ul li span{
+    display: inline-block;
+    border-radius: 50%;
+    outline: 3px solid rgb(83, 83, 255) ;
+    margin: 20px;
+    width: 100%;
+    height: 45px;
+    cursor: pointer;
+}
+
+.product h2 {
+    font-size: 45.6px;
+    color: black;
+    display: inline;
+    float: right;
+    margin: 20px;
+}
+
+.container .menu{
+    width: 100%;
+    padding: 3%;
+    color: #000000;
+    background: #8bffe0;
+    font-size: 30px;
+    text-align: center;
+    outline: 1px solid black;
+}
+
+.container .menu:hover{
+    background: #4ea68f;
+    cursor: pointer;
+}
+
+.container .menuevil{
+    background: rgb(255, 101, 101);
+    width: 100%;
+    padding: 3%;
+    color: #000000;
+    font-size: 30px;
+    text-align: center;
+    outline: 1px solid black;
+    margin-top: 15px;
+}
+
+.container .menuevil:hover{
+    background: rgb(152, 57, 57);
+    cursor: pointer;
+}
+
+.cartttl{
+    padding: 10px;
+    outline: 3px solid black;
+    width: 98%;
+    margin: 5px;
+    height: 75px;
+}
+
+.cartttl h2{
+    font-size: 30px;
+    float: right;
+    margin: 10px;
+    color: #000000;
+}
+
+.cartttl button{
+    width: 80px;
+    height: 20px;
+    float: right;
+    margin-top: 27px;
+}
+
+.cartttl span{
+    height: 20px;
+    float: right;
+    margin-top: 27px;
+    font-size: 30px;
+    float: left;
+}
+
+.cart-item {
+    margin: 10px;
+    padding: 10px;
+    outline: 3px solid black;
+    width: 98%;
+    margin: 20px 5px;
+    height: 75px;
+}
+
+.cart-item .cart-product-image{
+    height: 100%;
+    display: inline;
+}
+
+.cart-item .quantity-controls{
+    font-size: 20px;
+    margin-top: 5px;
+    float: right;
+    display: inline;
+}
+
+.cart-item .cart-product-info {
+    display: inline;
+}
+
+.cart-item .cart-product-info h2{
+    font-size:25px ;
+    width: 20%;
+    overflow: hidden;
+    margin: 20px;
+    padding: 0%;
     float: right;
 }
 
-.loginbtn:hover {
-    background-color: #fcc7ff;
+.cart-item .cart-product-info span{
+    font-size:25px ;
+    margin: 15px 0px;
+    padding: 0%;
+    float: right;
+}
+
+.cart-item .cart-product-info p{
+    font-size:25px ;
+    width: 20%;
+    overflow: hidden;
+    margin: 20px;
+    padding: 0%;
+    float: right;
+}
+
+.cart-item button{
+    float: right;
+    margin: 20px;
 }

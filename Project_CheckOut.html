@@ -1,22 +1,38 @@
 html lang = en>
     <head>
-
-
         <link  rel="stylesheet"  href="ProjectStyle.css">
+        <title>Basket</title>
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     </head>
 
     <body>
         <ul class="header">
-            <li><a href="Project_Index.html" style="padding-bottom: 14px;  padding-top: 14px;"><img src="Project logo.png" alt="Make Up Logo"></a></li>
-            <li><a href="Project_Account.html">Account</a></li>
+            <li><a href="Project_Index.html" style="padding-bottom: 14px;  padding-top: 14px;"><img src="Projectlogo.png" alt="Make Up Logo"></a></li>
+            <li><a href="Project_Account_settings.html">Account</a></li>
             <li><a href="Project_Store.html">Store</a></li>
-            <li><a href="Project_CheckOut.html">Check Out</a></li>
+            <li style="float: right;"><a href="Project_CheckOut.html" style="padding-bottom: 14px;  padding-top: 14px;"><img src="Basket.png" alt="Shopping cart" style="height: 54px; width:54px;"></a></li>
         </ul>
 
+        <h1>Shopping Cart</h1>
+
+        <div id="cart">
+        
+        </div>
 
 
+        <div class="cartttl" id="cart-total">
+            <h2>Total: €0.00</h2>
 
+            <div class="payment-area">
+                <span id="outstanding-balance">
+                    Outstanding Balance: €0.00
+                </span>
 
+                <button class="paybtn" onclick="payNow()">
+                    Pay Now
+                </button>
+            </div>
+        </div>
 
 
         <div class="footer">
@@ -27,9 +43,435 @@ html lang = en>
             </ul>
             <ul>
                 <li class="tooltip"><img src="instagram-white-icon.png" style="padding-left: 0px;"><span class="tooltiptext">No instagram yet : (</span></li>
-                <li class="tooltip"><img src="fb icon.png"><span class="tooltiptext">No facebook yet : (</span></li>
+                <li class="tooltip"><img src="fbicon.png"><span class="tooltiptext">No facebook yet : (</span></li>
                 <li class="tooltip"><img src="twitter.png"><span class="tooltiptext">No twitter yet : (</span></li>
             </ul>
             </div>
         </div>
+
+
+        <script>
+            const Supabase_URL = "https://yabijlzbcwklpwprubrt.supabase.co";
+            const Supabase_Anon_Key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhYmlqbHpiY3drbHB3cHJ1YnJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgxNDc4MzksImV4cCI6MjEwMzcyMzgzOX0.FVi-qVZknv2iKHcyz8QZ-m1hMMxTqGB4zNd8pzesZfk";
+            const supabaseClient = window.supabase.createClient(Supabase_URL, Supabase_Anon_Key);
+
+            function displayEmptyCart() {
+                const cartContainer = document.getElementById("cart");
+                const cartTotal = document.getElementById("cart-total");
+
+                cartContainer.innerHTML = `
+                    <h2>Your shopping cart is empty.</h2>
+                `;
+
+                cartTotal.innerHTML = `
+                    <h2>Total: €0.00</h2>
+                `;
+            };
+
+
+
+            async function loadCart() {
+                const { data: authData, error: authError } = await supabaseClient.auth.getUser();
+                if (authError) {
+                    if (authError.name === "AuthSessionMissingError") {
+                        await loadGuestCart();
+                        return;
+                    }
+                    console.error("Auth error:", authError);
+                    return;
+                }
+
+                if (!authData.user) {await loadGuestCart();} 
+                else {await loadDatabaseCart(authData.user.id);}
+            }
+
+            async function loadGuestCart() {
+                let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+                if (cart.length === 0) {
+                    displayEmptyCart();
+                    return;
+                }
+
+                const { data: products, error } =
+                    await supabaseClient
+                        .from("products")
+                        .select("*");
+
+                if (error) {
+                    console.error("Product error:", error);
+                    return;
+                }
+
+                const cartItems = cart.map(cartItem => {
+
+                    const product = products.find (product =>
+                            Number(product.product_id) === Number(cartItem.product_id)
+                    );
+
+                    return {...cartItem,
+                        product: product
+                    };
+                });
+                displayCart(cartItems);
+            };
+
+            async function loadDatabaseCart(userId) {
+                const { data: customer, error: customerError } = await supabaseClient
+                        .from("customers")
+                        .select("customer_id")
+                        .eq("auth_customer_id", userId)
+                        .single();
+
+                if (customerError) {
+                    console.error("Customer error:", customerError);
+                    return;
+                }
+
+                const { data: cart, error: cartError } = await supabaseClient
+                        .from("cart")
+                        .select("*")
+                        .eq("customer_id", customer.customer_id);
+
+                if (cartError) {
+                    console.error("Cart error:", cartError);
+                    return;
+                }
+
+                if (!cart || cart.length === 0) {
+                    displayEmptyCart();
+                    return;
+                }
+
+                const { data: products, error: productError } =
+                    await supabaseClient
+                        .from("products")
+                        .select("*");
+
+                if (productError) {
+                    console.error("Product error:", productError);
+                    return;
+                }
+
+                const cartItems = cart.map(cartItem => {
+
+                    const product = products.find (product =>
+                            Number(product.product_id) === Number(cartItem.product_id)
+                    );
+                    return {...cartItem,
+                        product: product
+                    };
+                });
+                displayCart(cartItems);
+            };
+
+            function displayCart(cartItems) {
+                const cartContainer = document.getElementById("cart");
+                const cartTotal = document.getElementById("cart-total");
+
+                cartContainer.innerHTML = "";
+
+                let total = 0;
+
+                cartItems.forEach(function(item) {
+                    if (!item.product) {
+                        console.error("Product not found:", item.product_id);
+                        return;
+                    }
+
+                    const product = item.product;
+
+                    const price = Number(product.product_price);
+                    const quantity = Number(item.quantity);
+
+                    const itemTotal = price * quantity;
+
+                    total += itemTotal;
+
+                    const cartItem = document.createElement("div");
+                    cartItem.className = "cart-item";
+
+
+                    cartItem.innerHTML = `
+                        <img 
+                            src="${product.product_image}" 
+                            alt="${product.product_name}"
+                            class="cart-product-image"
+                        >
+
+                        <div class="cart-product-info">
+
+                            <p>Price: €${price.toFixed(2)}</p>
+
+                            <p>Item total: €${itemTotal.toFixed(2)}</p>
+                            
+                            <h2>${product.product_name}</h2>
+
+                            <div class="quantity-controls">
+
+                                <button onclick="changeQuantity(${product.product_id}, 1)">
+                                    +
+                                </button>
+                                
+                                <span>${quantity}</span>
+
+                                <button onclick="changeQuantity(${product.product_id}, -1)">
+                                    -
+                                </button>
+
+                            </div>
+
+                            <button onclick="removeFromCart(${product.product_id})">
+                                Remove
+                            </button>
+
+                        </div>
+                    `;
+
+
+                    cartContainer.appendChild(cartItem);
+
+                });
+
+                cartTotal.innerHTML = `
+                    <h2>Total: €${total.toFixed(2)}</h2>
+                    <button class="paybtn" onclick="payNow()">
+                        Pay Now
+                    </button>
+                `;
+            };
+
+            async function changeQuantity(productId, change) {
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+
+                if (error) {
+                    console.error("Session error:", error);
+                    return;
+                }
+
+                if (!session) {
+                    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+                    const item = cart.find(item =>
+                        Number(item.product_id) === Number(productId)
+                    );
+
+                    if (!item) {
+                        console.error("Product not found in guest cart");
+                        return;
+                    }
+                    item.quantity = Number(item.quantity) + change;
+
+                    if (item.quantity <= 0) {
+                        cart = cart.filter(item =>
+                            Number(item.product_id) !== Number(productId)
+                        );
+                    }
+                    localStorage.setItem("cart", JSON.stringify(cart));
+
+                    await loadCart();
+
+                    return;
+                }
+
+                const { data: customer, error: customerError } =
+                    await supabaseClient
+                        .from("customers")
+                        .select("customer_id")
+                        .eq("auth_customer_id", session.user.id)
+                        .single();
+
+                if (customerError) {
+                    console.error("Customer error:", customerError);
+                    return;
+                }
+
+                const { data: cartItem, error: cartError } = await supabaseClient
+                        .from("cart")
+                        .select("*")
+                        .eq("customer_id", customer.customer_id)
+                        .eq("product_id", productId)
+                        .single();
+
+                if (cartError) {
+                    console.error("Cart item error:", cartError);
+                    return;
+                }
+
+                const newQuantity = Number(cartItem.quantity) + change;
+
+                if (newQuantity <= 0) {
+                    await removeFromCart(productId);} 
+                    else {
+                    const { error: updateError } = await supabaseClient
+                            .from("cart")
+                            .update({quantity: newQuantity})
+                            .eq("cart_id", cartItem.cart_id);
+
+                    if (updateError) {
+                        console.error("Quantity update error:", updateError);
+                        return;
+                    }
+                    await loadCart();
+                }
+            };
+
+            async function removeFromCart(productId) {
+                const { data: { session }, error } =
+                    await supabaseClient.auth.getSession();
+                if (error) {
+                    console.error("Session error:", error);
+                    return;
+                }
+
+                if (!session) {
+
+                    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+                    cart = cart.filter(item => Number(item.product_id) !== Number(productId)
+                    );
+                    localStorage.setItem("cart", JSON.stringify(cart));
+                    await loadCart();
+                    return;
+                }
+
+                const { data: customer, error: customerError } =
+                    await supabaseClient
+                        .from("customers")
+                        .select("customer_id")
+                        .eq("auth_customer_id", session.user.id)
+                        .single();
+
+                if (customerError) {
+                    console.error("Customer error:", customerError);
+                    return;
+                }
+
+                const { error: deleteError } =
+                    await supabaseClient
+                        .from("cart")
+                        .delete()
+                        .eq("customer_id", customer.customer_id)
+                        .eq("product_id", productId);
+
+                if (deleteError) {
+                    console.error("Remove cart error:", deleteError);
+                    return;
+                }
+
+                await loadCart();
+            }
+
+            async function payNow() {
+
+                const { data: { session }, error } =
+                    await supabaseClient.auth.getSession();
+
+                if (error) {
+                    console.error("Session error:", error);
+                    return;
+                }
+
+                if (!session) {
+
+                    localStorage.removeItem("cart");
+
+                    await loadCart();
+
+                    return;
+                }
+
+                const { data: customer, error: customerError } =
+                    await supabaseClient
+                        .from("customers")
+                        .select("customer_id, outstanding_balance")
+                        .eq("auth_customer_id", session.user.id)
+                        .single();
+
+                if (customerError) {
+                    console.error("Customer error:", customerError);
+                    return;
+                }
+
+                const { data: cart, error: cartError } =
+                    await supabaseClient
+                        .from("cart")
+                        .select("*")
+                        .eq("customer_id", customer.customer_id);
+
+                if (cartError) {
+                    console.error("Cart error:", cartError);
+                    return;
+                }
+
+                if (!cart || cart.length === 0) {
+                    alert("Your cart is empty.");
+                    return;
+                }
+
+                const { data: products, error: productError } =
+                    await supabaseClient
+                        .from("products")
+                        .select("*");
+
+                if (productError) {
+                    console.error("Product error:", productError);
+                    return;
+                }
+
+                let total = 0;
+
+                cart.forEach(cartItem => {
+
+                    const product = products.find(product =>
+                        Number(product.product_id) === Number(cartItem.product_id)
+                    );
+
+                    if (product) {
+                        total +=
+                            Number(product.product_price) *
+                            Number(cartItem.quantity);
+                    }
+                });
+
+                const currentBalance =
+                    Number(customer.outstanding_balance) || 0;
+
+                const newBalance = currentBalance + total;
+
+                const { error: balanceError } =
+                    await supabaseClient
+                        .from("customers")
+                        .update({
+                            outstanding_balance: newBalance
+                        })
+                        .eq("customer_id", customer.customer_id);
+
+                if (balanceError) {
+                    console.error("Balance update error:", balanceError);
+                    return;
+                }
+
+                const { error: deleteError } =
+                    await supabaseClient
+                        .from("cart")
+                        .delete()
+                        .eq("customer_id", customer.customer_id);
+
+                if (deleteError) {
+                    console.error("Cart delete error:", deleteError);
+                    return;
+                }
+
+                await loadCart();
+                alert(
+                    `Purchase added to outstanding balance: €${total.toFixed(2)}`
+                );
+            }
+
+
+
+            loadCart();
+
+
+        </script>
     </body>
